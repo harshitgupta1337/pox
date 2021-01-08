@@ -101,6 +101,7 @@ class LearningSwitch (object):
     #          str(self.transparent))
 
   def _handle_PacketIn (self, event):
+    log.info("Packet in")
     """
     Handle packet in messages from the switch to implement above algorithm.
     """
@@ -135,10 +136,14 @@ class LearningSwitch (object):
         dst_ip = packet.next.protodst
     else:
         dst_ip = packet.next.dstip
+        print ("DST_IP = ", dst_ip, " packet type = ", type(packet.next))
 
+    if not event.parsed.find('ipv4') and not type(packet.next) == arp:
+        log.info("Discarding packet that is not ipv4")
+        return
     local_idx = None
     for idx in range(len(self.local_ips)):
-        if self.local_ips[idx] == dst_ip:
+        if str(self.local_ips[idx]) == str(dst_ip):
             local_idx = idx
 
     if local_idx == None:
@@ -187,7 +192,9 @@ class l2_learning (object):
     for city_idx in range(len(self.latency_cfg)):
         city_cfg = self.latency_cfg[city_idx]
         broker_ip = city_cfg["broker"]
-        client_ips = [x for x  in city_cfg["clients"]]
+        client_ips = []
+        if(city_cfg["clients"]):
+            client_ips = [x for x  in city_cfg["clients"]]
         local_ips = [broker_ip]
         local_ips += client_ips
         dpid = city_idx + 1
